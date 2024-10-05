@@ -15,10 +15,16 @@ class Letter():
         self.replaced: list[Letter] = []
 
     def __eq__(self, other: "Letter") -> bool:
-        w_perc = 0.55
-        h_perc = 0.55
-        within_w = abs(other.coord[0] - self.coord[0]) <= self.w*w_perc or abs(other.coord[0] - self.coord[0]) <= other.w*w_perc
-        within_h = abs(other.coord[1] - self.coord[1]) <= self.h*h_perc or abs(other.coord[1] - self.coord[1]) <= other.h*h_perc
+        w_perc = 0.9
+        h_perc = 0.9
+        if self.coord[0] > other.coord[0]:
+            within_w = self.coord[0] - other.coord[0]  < other.w * w_perc
+        else:
+            within_w = other.coord[0] - self.coord[0]  < self.w * w_perc
+        if self.coord[1] > other.coord[1]:
+            within_h = self.coord[1] - other.coord[1]  < other.h * h_perc
+        else:
+            within_h = other.coord[1] - self.coord[1]  < self.h * h_perc
         return within_w and within_h
     
     def __str__(self) -> str:
@@ -123,11 +129,7 @@ def convert_to_txt(rows, path):
         f.write(out)
     
 
-def iterate_letters(img_gray, font_path, letter_subset):
-    bound_optimal = 1
-    count = 0
-    prev_len = 0
-    set_scale_after = 5
+def iterate_letters(img_gray, font_path, letter_subset, match_thresh):
     all_letters = []
     for i, l in enumerate(letter_subset):
         print(f'Searching for all: {l}')
@@ -135,14 +137,7 @@ def iterate_letters(img_gray, font_path, letter_subset):
         if letter is None:
             continue
         cv.imwrite(f'test/{l}.png', letter)
-        if bound_optimal:
-            solve_letter(img_gray, letter, l, all_letters, bound_optimal=bound_optimal)
-        else:
-            solve_letter(img_gray, letter, l, all_letters)
-            if len(all_letters) > prev_len:
-                count += 1
-            if count > set_scale_after:
-                bound_optimal = average_scale(all_letters)
+        solve_letter(img_gray, letter, l, all_letters, match_thresh)
         print(f'{round(100*((i+1)/len(letter_subset)),2)}% of letters have been searched')
     return all_letters
 
@@ -235,33 +230,34 @@ def finalize_letters(letters):
             finalized.extend(word)
     return finalized
 
-def solve_letter(img_gray, letter, letter_char, all_letters:list[Letter], bound_optimal=0, threshold=0.55):
+def solve_letter(img_gray, letter, letter_char, all_letters:list[Letter], threshold=0.6):
     dim = letter.shape[::-1]
-    if not bound_optimal:
-        w_lo = math.floor(dim[0]*0.7)
-        w_hi = math.ceil(dim[0]*1.3)
-    else:
-        delta = 3
-        bound_optimal = round(bound_optimal*dim[0])
-        w_lo = bound_optimal-delta
-        w_hi = bound_optimal+delta
-    for width in range(w_lo, w_hi):
-        resized = resize_to_width(letter, width)
-        res = cv.matchTemplate(img_gray,resized,cv.TM_CCOEFF_NORMED)
-        loc = np.where(res >= threshold)
-        for pt in zip(*loc[::-1]):
-            new_letter = Letter(pt, letter_char, res[pt[1],pt[0]], dim[0], dim[1], width/dim[0])
-            if new_letter in all_letters:
-                overlap = all_letters.index(new_letter)
-                if all_letters[overlap] < new_letter:
-                    old = all_letters.pop(overlap)
-                    all_letters.append(new_letter)
-                    new_letter.replace(old)
-                else:
-                    all_letters[overlap].replace(new_letter)
-            else:
+    res = cv.matchTemplate(img_gray,letter,cv.TM_CCOEFF_NORMED)
+    loc = np.where(res >= threshold)
+    for pt in zip(*loc[::-1]):
+        new_letter = Letter(pt, letter_char, res[pt[1],pt[0]], dim[0], dim[1], 1)
+        if new_letter in all_letters:
+            overlap = all_letters.index(new_letter)
+            if all_letters[overlap] < new_letter:
+                old = all_letters.pop(overlap)
                 all_letters.append(new_letter)
-
+                new_letter.replace(old)
+                if (letter_char == 'L' or old.l_char == 'L') and (750 <= new_letter.coord[0] <= 775 or 750 <= old.coord[0] <= 775):
+                    print('REPLACING OLD:', old, old.coord)
+                    print('WITH NEW:', new_letter, new_letter.coord)
+                    print('\n\n\n')
+            else:
+                all_letters[overlap].replace(new_letter)
+                if (letter_char == 'L' or all_letters[overlap].l_char == 'L') and (750 <= new_letter.coord[0] <= 775 or 750 <= all_letters[overlap].coord[0] <= 775):
+                    print('KEEPING OLD:', all_letters[overlap], all_letters[overlap].coord)
+                    print('OVER NEW:', new_letter, new_letter.coord)
+                    print('\n\n\n')
+        else:
+            all_letters.append(new_letter)
+            if letter_char == 'L' and 750 <= new_letter.coord[0] <= 775:
+                print(new_letter, pt)
+                print('\n\n\n')
+    
 
 def identify_scale(single_letter_path, known_letter_char, font_path):
     single = format_letter_png(single_letter_path)
@@ -289,14 +285,18 @@ def solve_font(img_path, font_path, letter_subset=['a', 'b', 'c', 'd', 'e', 'f',
                                                    'r', 's', 't', 'u', 'v', 'w', 'x', 'y','z',
                                                    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
                                                    'J', 'K', 'L', 'M','N', 'O', 'P', 'Q', 'R',
-                                                   'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']):
+                                                   'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+                                                   match_thresh = 0.6):
     img_rgb = cv.imread(img_path)
     img_copy = cv.imread(img_path)
     img_gray = cv.cvtColor(img_rgb, cv.COLOR_BGR2GRAY)
     _, img_gray = cv.threshold(img_gray, 128, 255, cv.THRESH_BINARY)
     cv.imwrite('test/gray.png', img_gray)
-    letters = iterate_letters(img_gray, font_path, letter_subset)
+    letters = iterate_letters(img_gray, font_path, letter_subset, match_thresh)
     draw_letters(img_copy, letters)
+    for l in letters:
+        if l.l_char == 'L':
+            print(l, l.coord, l.w, l.h)
     cv.imwrite('test/_res_before.png', img_copy)
     final = finalize_letters(letters)
     draw_letters(img_rgb, final)

@@ -1,6 +1,7 @@
 import os
 import cv2 as cv
 import numpy as np
+from src.font_file_extract import extract_font
 
 
 class Letter():
@@ -194,7 +195,7 @@ def scale_letters(font_path, output_path, letters, scale):
             cv.imwrite(f'{output_path}/{l}.png', scaled)
 
 
-def solve_font(img_path, font_path, letter_subset=['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+def match_letters(img_path, font_path, letter_subset=['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
                                                    'i', 'j', 'k', 'l','m','n', 'o', 'p', 'q',
                                                    'r', 's', 't', 'u', 'v', 'w', 'x', 'y','z',
                                                    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
@@ -208,3 +209,20 @@ def solve_font(img_path, font_path, letter_subset=['a', 'b', 'c', 'd', 'e', 'f',
     final = finalize_letters(letters)
     draw_letters(img_rgb, final)
     cv.imwrite('decoded_image.png', img_rgb)
+
+def adjust_font_scale(save_path, font_path, letter_path, letter_char, letters):
+    print('Identifying scale...')
+    if '.' in font_path:
+        default_size = 100
+        extract_font(font_path, save_path, default_size, letters)
+        scale = identify_scale(letter_path, letter_char, save_path)
+        extract_font(font_path, save_path, default_size*scale, letters)
+    else:
+        scale = identify_scale(letter_path, letter_char, font_path)
+        scale_letters(font_path, save_path, letters, scale)
+    print('Done')
+
+def solve_font(font_path, message_path, letter_path, letter_char, letters, threshold):
+    save_path = 'res/font_imgs'
+    adjust_font_scale(save_path, font_path, letter_path, letter_char, letters)
+    match_letters(message_path, save_path, letters, threshold)

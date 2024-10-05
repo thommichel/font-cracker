@@ -227,7 +227,6 @@ def extract_font(font_path, output_path, font_size, letter_subset):
                 # print(f"{text} -> {filename}")
             except Exception as err:
                 print(f"{text} -> {err}", file=sys.stderr)
-    print('Font Extracted')
 
 if __name__ == '__main__':
     extract_font('res/fonts/files/Floralia.otf', 'output', 100, ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',\

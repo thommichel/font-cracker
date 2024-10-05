@@ -1,5 +1,4 @@
-from src.font_file_extract import extract_font
-from src.font_identify import solve_font, identify_scale, scale_letters
+from src.font_identify import solve_font
 
 LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l','m',\
            'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',\
@@ -32,31 +31,26 @@ def run():
     single_letter = 'res/flora_T.png'
     l_char = 'T'
 
-    font_path = 'res/fonts/images/poke'
-    encoded_img = 'res/unown_a.png'
-    single_letter = 'res/unown_A.png'
-    l_char = 'A'
+    # font_path = 'res/fonts/images/poke'
+    # encoded_img = 'res/unown_a.png'
+    # single_letter = 'res/unown_A.png'
+    # l_char = 'A'
+
+    # font_path = 'res/fonts/images/poke'
+    # encoded_img = 'all_unown.png'
+    # single_letter = 'all_a.png'
+    # l_char = 'A'
+    # letters = LETTERS
 
     # font_path = 'res/fonts/images/poke'
     # encoded_img = 'res/unown_m.png'
 
-    # font_path = 'res/fonts/files/Trees.otf'
-    # encoded_img = 'Trees.png'
-    # single_letter = 's.png'
-    # l_char = 's'
+    font_path = 'res/fonts/files/Trees.otf'
+    encoded_img = 'Trees.png'
+    single_letter = 's.png'
+    l_char = 's'
 
-    if '.' in font_path:
-        default_size = 100
-        extract_font(font_path, 'res/font_imgs', default_size, LETTERS)
-        scale = identify_scale(single_letter, l_char, 'res/font_imgs')
-        extract_font(font_path, 'res/font_imgs', default_size*scale, LETTERS)
-        font_path = 'res/font_imgs'
-    else:
-        print('scaling')
-        scale = identify_scale(single_letter, l_char, font_path)
-        scale_letters(font_path, f'{font_path}-scaled', LETTERS, scale)
-        font_path = f'{font_path}-scaled'
-    solve_font(encoded_img, font_path, LETTERS)
+    solve_font(font_path, encoded_img, single_letter, l_char, LETTERS, 0.4)
 
 if __name__ == '__main__':
     run()

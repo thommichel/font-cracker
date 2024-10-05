@@ -1,7 +1,6 @@
 import os
 import cv2 as cv
 import numpy as np
-import math
 
 
 class Letter():
@@ -48,12 +47,6 @@ class Letter():
             i += 1
         self.replaced.insert(i, letter)
 
-def within_delta_of_any(points, point, dx, dy):
-    for p in points:
-        if abs(p[0] - point[0]) <= dx and abs(p[1] - point[1]) <= dy:
-            return True
-    return False
-
 def print_letters(letters):
     print('[', end='')
     print(', '.join([f'({str(l.l_char)}, {l.prcnt_match})' for l in letters]), end='')
@@ -64,32 +57,11 @@ def print_xy(letters):
     print(', '.join([f'({str(l.l_char)}, {str(l.coord[0])}, {str(l.coord[1])})' for l in letters]))
     print(']')
 
-def average_scale(all_letters:list[Letter]):
-    scale_sum = 0
-    for letter in all_letters:
-        scale_sum += letter.scale
-    return scale_sum/len(all_letters)
-
-def average_height(all_letters:list[Letter]):
-    height_sum = 0
-    for letter in all_letters:
-        height_sum += letter.h
-    return height_sum/len(all_letters)
-
 def average_letter(letters:list[Letter], key):
     tot = 0
     for l in letters:
         tot += key(l)
     return tot/len(letters)
-
-def average_xy(all_letters:list[Letter]):
-    xy_sum = [0,0]
-    for letter in all_letters:
-        xy_sum[0] += letter.coord[0]
-        xy_sum[1] += letter.coord[1]
-    xy_sum[0] /= len(all_letters)
-    xy_sum[1] /= len(all_letters)
-    return xy_sum
 
 def crop_letter(letter):
     ind = np.nonzero(letter == 0)
@@ -97,20 +69,10 @@ def crop_letter(letter):
     y = np.sort(ind[1])
     return letter[x[0]:x[-1], y[0]:y[-1]]
 
-def resize_to_width(img, width):
-    w, h = img.shape[::-1]
-    res = w/h
-    new_size = (round(width), round(width/res))
-    return cv.resize(img, new_size)
-
 def format_letter_png(letter_path:str, threshold=128):
     template = cv.imread(letter_path, cv.IMREAD_UNCHANGED)
-
-    l = letter_path.split('.png')[0][-1]
-
     if template is None:
         return None
-    cv.imwrite(f'test/{l}-orig.png', template)
     trans_mask = template[:,:,3] == 0
     template[trans_mask] = [255, 255, 255, 255]
     template = cv.cvtColor(template, cv.COLOR_BGRA2GRAY)
@@ -123,12 +85,10 @@ def draw_letters(img_rgb, all_letters:list[Letter]):
         cv.rectangle(img_rgb, l.coord, (l.coord[0] + l.w, l.coord[1] + l.h), (211,211,211), -1)
         cv.putText(img_rgb,l.l_char,(l.coord[0], l.coord[1] + round(0.6*l.h)), cv.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2,cv.LINE_AA)
 
-def convert_to_txt(rows, path):
+def convert_to_txt(rows):
     out = '\n'.join([' '.join([''.join([l.l_char for l in word]) for word in row]) for row in rows])
-    with open(path, 'w') as f:
-        f.write(out)
+    return out
     
-
 def iterate_letters(img_gray, font_path, letter_subset, match_thresh):
     all_letters = []
     for i, l in enumerate(letter_subset):
@@ -136,14 +96,13 @@ def iterate_letters(img_gray, font_path, letter_subset, match_thresh):
         letter = format_letter_png(f'{font_path}/{l}.png')
         if letter is None:
             continue
-        cv.imwrite(f'test/{l}.png', letter)
         solve_letter(img_gray, letter, l, all_letters, match_thresh)
         print(f'{round(100*((i+1)/len(letter_subset)),2)}% of letters have been searched')
     return all_letters
 
 def group_rows(letters):
     sorted_h:list[Letter] = sorted(letters, key=lambda x: x.coord[1])
-    avg_h = average_height(letters)
+    avg_h = average_letter(letters, lambda x: x.h)
     rows = []
     row = [sorted_h[0]]
     for i in range(1, len(sorted_h)):
@@ -159,47 +118,6 @@ def group_rows(letters):
     for r in rows:
         sorted_rows.append(sorted(r, key=lambda x: x.coord[0]))
     return sorted_rows
-
-def check_invalid_heights(rows:list[list[Letter]]):
-    fixed_rows = []
-    for row in rows:
-        avg_xy = average_xy(row)
-        avg_h = average_height(row)
-        fixed = []
-        for l in row:
-            f = l
-            i = 0
-            num_rep = len(f.replaced)
-            while i < num_rep and abs(float(f.coord[1] + f.h)-float(avg_xy[1] + avg_h)) > avg_h * 0.02:
-                f = l.replaced[i]
-                i += 1
-            fixed.append(f)
-        fixed_rows.append(fixed)
-    return fixed_rows
-
-def check_invalid_widths(spaced_rows:list[list[list[Letter]]]):
-    fixed_rows = []
-    for row in spaced_rows:
-        fixed_row = []
-        for word in row:
-            fixed_word = []
-            avg_xy = average_xy(word)
-            avg_h = average_height(word)
-            avg_delta = 0
-            for i in range(1, len(word)):
-                avg_delta += word[i].coord[0] - (word[i-1].coord[0] + word[i-1].w)
-            avg_delta /= len(word)
-            for i in range(len(word)-1):
-                f = word[i]
-                j = 0
-                while j < len(word[i].replaced) and (abs(avg_delta - (word[i+1].coord[0] - (f.coord[0] + f.w))) > avg_delta*0.5 or abs(float(f.coord[1])-float(avg_xy[1])) > avg_h * 0.08):
-                    f = word[i].replaced[j]
-                    j += 1
-                fixed_word.append(f)
-            fixed_word.append(word[-1])
-            fixed_row.append(fixed_word)
-        fixed_rows.append(fixed_row)
-    return fixed_rows
             
 
 def identify_spaces(rows:list[list[Letter]]):
@@ -210,9 +128,7 @@ def identify_spaces(rows:list[list[Letter]]):
         avg_gap = 0
         for i in range(1, len(row)):
             avg_gap += (row[i].coord[0] - (row[i-1].coord[0] + row[i-1].w))/len(row)
-        print('AVG:', avg_gap)
         for i in range(1, len(row)):
-            print('GAP:', row[i].coord[0] - (row[i-1].coord[0] + row[i-1].w))
             if row[i].coord[0] - (row[i-1].coord[0] + row[i-1].w) > avg_gap*1.5:
                 line.append(word)
                 word = []
@@ -225,7 +141,9 @@ def identify_spaces(rows:list[list[Letter]]):
 def finalize_letters(letters):
     rows = group_rows(letters)
     spaced = identify_spaces(rows)
-    convert_to_txt(spaced, 'decoded_message.txt')
+    msg = convert_to_txt(spaced)
+    with open('decoded_message.txt', 'w') as f:
+        f.write(msg)
     finalized = []
     for row in spaced:
         for word in row:
@@ -284,20 +202,9 @@ def solve_font(img_path, font_path, letter_subset=['a', 'b', 'c', 'd', 'e', 'f',
                                                    'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
                                                    match_thresh = 0.6):
     img_rgb = cv.imread(img_path)
-    img_copy = cv.imread(img_path)
     img_gray = cv.cvtColor(img_rgb, cv.COLOR_BGR2GRAY)
     _, img_gray = cv.threshold(img_gray, 128, 255, cv.THRESH_BINARY)
-    cv.imwrite('test/gray.png', img_gray)
     letters = iterate_letters(img_gray, font_path, letter_subset, match_thresh)
-    draw_letters(img_copy, letters)
-    cv.imwrite('test/_res_before.png', img_copy)
     final = finalize_letters(letters)
     draw_letters(img_rgb, final)
     cv.imwrite('decoded_image.png', img_rgb)
-
-if __name__ == '__main__':
-    # solve_font('res/flora.png','res/fonts/images/flora')
-    solve_font('../res/unown_a.png','res/fonts/images/poke')
-    # solve_font('../res/unown_m.png','res/fonts/images/poke')
-    # solve_font('../unown.png','poke')
-    # solve_font('../res/trees.png','res/fonts/images/trees')

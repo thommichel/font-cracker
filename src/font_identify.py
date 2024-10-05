@@ -207,9 +207,13 @@ def identify_spaces(rows:list[list[Letter]]):
     for row in rows:
         line = []
         word = [row[0]]
-        avg_w = average_letter(row, lambda x: x.w)
+        avg_gap = 0
         for i in range(1, len(row)):
-            if row[i].coord[0] - (row[i-1].coord[0] + row[i-1].w) > avg_w*0.5:
+            avg_gap += (row[i].coord[0] - (row[i-1].coord[0] + row[i-1].w))/len(row)
+        print('AVG:', avg_gap)
+        for i in range(1, len(row)):
+            print('GAP:', row[i].coord[0] - (row[i-1].coord[0] + row[i-1].w))
+            if row[i].coord[0] - (row[i-1].coord[0] + row[i-1].w) > avg_gap*1.5:
                 line.append(word)
                 word = []
             word.append(row[i])
@@ -220,35 +224,33 @@ def identify_spaces(rows:list[list[Letter]]):
             
 def finalize_letters(letters):
     rows = group_rows(letters)
-    fixed_rows = check_invalid_heights(rows)
-    spaced = identify_spaces(fixed_rows)
-    final_spaced = check_invalid_widths(spaced)
-    convert_to_txt(final_spaced, 'decoded_message.txt')
+    spaced = identify_spaces(rows)
+    convert_to_txt(spaced, 'decoded_message.txt')
     finalized = []
-    for row in final_spaced:
+    for row in spaced:
         for word in row:
             finalized.extend(word)
     return finalized
 
-def solve_letter(img_gray, letter, letter_char, all_letters:list[Letter], threshold=0.6):
+def solve_letter(img_gray, letter, letter_char, all_letters:list[Letter], threshold):
     dim = letter.shape[::-1]
     res = cv.matchTemplate(img_gray,letter,cv.TM_CCOEFF_NORMED)
     loc = np.where(res >= threshold)
     for pt in zip(*loc[::-1]):
         new_letter = Letter(pt, letter_char, res[pt[1],pt[0]], dim[0], dim[1], 1)
         if new_letter in all_letters:
-            overlaping = [index for index, l in enumerate(all_letters) if l == new_letter]
-            overlaping = sorted(overlaping, key=lambda x: all_letters[x].prcnt_match)
+            overlaping = [l for l in all_letters if l == new_letter]
+            overlaping = sorted(overlaping, key=lambda x: x.prcnt_match)
             i = 0
-            while i < len(overlaping) and all_letters[overlaping[i]] < new_letter:
-                old = all_letters.pop(overlaping[i])
-                new_letter.replace(old)
+            while i < len(overlaping) and overlaping[i] < new_letter:
+                all_letters.remove(overlaping[i])
+                new_letter.replace(overlaping[i])
                 i += 1
             if i >= len(overlaping):
                 all_letters.append(new_letter)
             else:
                 for i in range(i, len(overlaping)):
-                    all_letters[overlaping[i]].replace(new_letter)
+                    all_letters[all_letters.index(overlaping[i])].replace(new_letter)
         else:
             all_letters.append(new_letter)
     
@@ -288,9 +290,6 @@ def solve_font(img_path, font_path, letter_subset=['a', 'b', 'c', 'd', 'e', 'f',
     cv.imwrite('test/gray.png', img_gray)
     letters = iterate_letters(img_gray, font_path, letter_subset, match_thresh)
     draw_letters(img_copy, letters)
-    for l in letters:
-        if l.l_char == 'L':
-            print(l, l.coord, l.w, l.h)
     cv.imwrite('test/_res_before.png', img_copy)
     final = finalize_letters(letters)
     draw_letters(img_rgb, final)
@@ -302,23 +301,3 @@ if __name__ == '__main__':
     # solve_font('../res/unown_m.png','res/fonts/images/poke')
     # solve_font('../unown.png','poke')
     # solve_font('../res/trees.png','res/fonts/images/trees')
-
-
-'''
-Tree font does not work.
-Manual scale set?
-
-
-Identify scale by using the vouls and changing scale until a match is found with a very high correctness
-
-
-SHOULD ACTUALLY WORK
-
-- Find contours
-- Get contour of 3 letter
-- Find correct scale based on those letters
-- Search on remaining contours instead of main picture??
-    - How to know how many contours to expect??
-
-
-'''

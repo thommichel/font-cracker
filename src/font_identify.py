@@ -237,26 +237,20 @@ def solve_letter(img_gray, letter, letter_char, all_letters:list[Letter], thresh
     for pt in zip(*loc[::-1]):
         new_letter = Letter(pt, letter_char, res[pt[1],pt[0]], dim[0], dim[1], 1)
         if new_letter in all_letters:
-            overlap = all_letters.index(new_letter)
-            if all_letters[overlap] < new_letter:
-                old = all_letters.pop(overlap)
-                all_letters.append(new_letter)
+            overlaping = [index for index, l in enumerate(all_letters) if l == new_letter]
+            overlaping = sorted(overlaping, key=lambda x: all_letters[x].prcnt_match)
+            i = 0
+            while i < len(overlaping) and all_letters[overlaping[i]] < new_letter:
+                old = all_letters.pop(overlaping[i])
                 new_letter.replace(old)
-                if (letter_char == 'L' or old.l_char == 'L') and (750 <= new_letter.coord[0] <= 775 or 750 <= old.coord[0] <= 775):
-                    print('REPLACING OLD:', old, old.coord)
-                    print('WITH NEW:', new_letter, new_letter.coord)
-                    print('\n\n\n')
+                i += 1
+            if i >= len(overlaping):
+                all_letters.append(new_letter)
             else:
-                all_letters[overlap].replace(new_letter)
-                if (letter_char == 'L' or all_letters[overlap].l_char == 'L') and (750 <= new_letter.coord[0] <= 775 or 750 <= all_letters[overlap].coord[0] <= 775):
-                    print('KEEPING OLD:', all_letters[overlap], all_letters[overlap].coord)
-                    print('OVER NEW:', new_letter, new_letter.coord)
-                    print('\n\n\n')
+                for i in range(i, len(overlaping)):
+                    all_letters[overlaping[i]].replace(new_letter)
         else:
             all_letters.append(new_letter)
-            if letter_char == 'L' and 750 <= new_letter.coord[0] <= 775:
-                print(new_letter, pt)
-                print('\n\n\n')
     
 
 def identify_scale(single_letter_path, known_letter_char, font_path):

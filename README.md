@@ -45,7 +45,18 @@ You will then have to enter 5 items:
 
 4. The actual letter of the image from step 3. In the example of `examples/trees_s.png` this would simply be `s`. Keep in mind that this is case senstive so make sure the letter matches the case of the letter in the font
 
-5. The percent threshold. This threshold determines what percent of a match the letter must be in order to be considered. The lower this is, the more accurate the program will be, but the longer it will take. This must be a float between 0 and 1
+5. The percent threshold. This threshold determines what percent of a match the letter must be in order to be considered. The lower this is, the more accurate the program will be, but the longer it will take. This must be a float between 0 and 1. If some letters cannot be identified, rerun the program at a lower threshhold.
 
 For other examples of inputs, look at the commented out examples in `main.py`
 
+### Font File Alternatives
+
+If instead of a `.ttf` or `.otf` file, a folder will all of the letters as images is found instead, it can be used instead of a font file. For this to work ensure each letter matches the following format
+
+lower case letter: `a` --> `a_l.png`
+
+upper case letter: `A` --> `a_u.png`
+
+where `_l` signifies lower case and `_u` signifies upper case
+
+This folder can then be entered instead of a font file in the CLI. Look at `examples/fonts/unown` for reference

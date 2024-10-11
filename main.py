@@ -7,6 +7,34 @@ LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l','m',\
 
 
 def run():
+    # # Example 1
+    # font_path = 'examples/fonts/Floralia.ttf'
+    # msg_img_path = 'examples/flora.png'
+    # letter_path = 'examples/flora_T.png'
+    # letter_char = 'T'
+    # threshold = 0.6
+
+    # # Example 2
+    # font_path = 'examples/fonts/Trees.otf'
+    # msg_img_path = 'examples/trees.png'
+    # letter_path = 'examples/trees_s.png'
+    # letter_char = 's'
+    # threshold = 0.4
+
+    # Example 3
+    # font_path = 'examples/fonts/unown'
+    # msg_img_path = 'examples/unown.png'
+    # letter_path = 'examples/unown__a.png'
+    # letter_char = 'A'
+    # threshold = 0.6
+
+    # Example 4
+    # font_path = 'examples/fonts/unown'
+    # msg_img_path = 'examples/unown_all.png'
+    # letter_path = 'examples/unown_all_A.png'
+    # letter_char = 'A'
+    # threshold = 0.6
+
     font_path = input('Enter the path of the font file/directory: ')
     msg_img_path = input('Enter the path of the encoded message image: ')
     letter_path = input('Enter the path of the single letter: ')

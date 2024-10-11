@@ -1,8 +1,8 @@
+from fontTools.ttLib import TTFont
+from PIL import Image, ImageDraw, ImageFont
 import os
 import cv2 as cv
 import numpy as np
-from src.font_file_extract import extract_font
-
 
 class Letter():
     def __init__(self, coord, letter, prcnt_match, w, h, scale):
@@ -76,8 +76,10 @@ class FontCracker():
         y = np.sort(ind[1])
         return letter[x[0]:x[-1], y[0]:y[-1]]
 
-    def format_letter_png(self, letter_path:str, threshold=128):
+    def format_letter_png(self, letter_path, threshold=128):
+        print(letter_path)
         template = cv.imread(letter_path, cv.IMREAD_UNCHANGED)
+        l = letter_path[0]
         if template is None:
             return None
         trans_mask = template[:,:,3] == 0
@@ -100,12 +102,12 @@ class FontCracker():
         all_letters = []
         for i, l in enumerate(letter_subset):
             print(f'Searching for all: {l}')
-            letter = self.format_letter_png(f'{font_path}/{l}.png')
+            letter = self.format_letter_png(f'{font_path}/{self.convert_letter_path(l)}.png')
             if letter is None:
                 continue
             self.solve_letter(img_gray, letter, l, all_letters, match_thresh)
-            self.progress = round(((i+1)/len(letter_subset)),2)
-            print(f'{self.progress*100}% of letters have been searched')
+            self.progress = (i+1)/len(letter_subset)
+            print(f'{round(self.progress*100, 2)}% of letters have been searched')
         return all_letters
 
     def group_rows(self, letters):
@@ -183,8 +185,7 @@ class FontCracker():
 
     def identify_scale(self, single_letter_path, known_letter_char, font_path):
         single = self.format_letter_png(single_letter_path)
-        known = self.format_letter_png(f'{font_path}/{known_letter_char}.png')
-
+        known = self.format_letter_png(f'{font_path}/{self.convert_letter_path(known_letter_char)}.png')
         single_dim = single.shape[::-1]
         known_dim = known.shape[::-1]
         scale = single_dim[1]/known_dim[1]
@@ -194,12 +195,12 @@ class FontCracker():
         if not os.path.exists(output_path):
             os.makedirs(output_path)
         for l in letters:
-            orig = cv.imread(f'{font_path}/{l}.png', cv.IMREAD_UNCHANGED)
+            orig = cv.imread(f'{font_path}/{self.convert_letter_path(l)}.png', cv.IMREAD_UNCHANGED)
             if orig is not None:
                 _, w, h = orig.shape[::-1]
                 new_size = (round(w*scale), round(h*scale))
                 scaled = cv.resize(orig, new_size)
-                cv.imwrite(f'{output_path}/{l}.png', scaled)
+                cv.imwrite(f'{output_path}/{self.convert_letter_path(l)}.png', scaled)
 
 
     def match_letters(self, img_path, font_path, letter_subset=['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
@@ -217,17 +218,41 @@ class FontCracker():
         self.draw_letters(img_rgb, final)
         cv.imwrite('decoded_image.png', img_rgb)
 
+    def extract_font(self, font_path, output_path, size, letters):
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        for letter in letters:
+            font = TTFont(font_path)
+            img = Image.new('RGBA', (size, size), (255, 255, 255, 0))
+            draw = ImageDraw.Draw(img)
+            font = ImageFont.truetype(font_path, size)
+            draw.text((0, 0), letter, font=font, fill=(0, 0, 0))
+
+            img.save(f'{output_path}/{self.convert_letter_path(letter)}.png')
+
     def adjust_font_scale(self, save_path, font_path, letter_path, letter_char, letters):
         print('Identifying scale...')
         if '.' in font_path:
             default_size = 100
-            extract_font(font_path, save_path, default_size, letters)
+            self.extract_font(font_path, save_path, default_size, letters)
             scale = self.identify_scale(letter_path, letter_char, save_path)
-            extract_font(font_path, save_path, default_size*scale, letters)
+            self.extract_font(font_path, save_path, round(default_size*scale), letters)
         else:
             scale = self.identify_scale(letter_path, letter_char, font_path)
             self.scale_letters(font_path, save_path, letters, scale)
         print('Done')
+
+
+    def convert_letter_path(self, letter:str):
+        upper = '_u'
+        lower = '_l'
+        if not letter.isalpha():
+            return letter
+        if letter == letter.upper():
+            return f'{letter.lower()}{upper}'
+        else:
+            return f'{letter}{lower}'
+            
 
     def solve_font(self, font_path, message_path, letter_path, letter_char, letters, threshold):
         save_path = 'res/font_imgs'

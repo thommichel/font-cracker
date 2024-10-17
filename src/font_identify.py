@@ -53,6 +53,8 @@ class FontCracker():
     def __init__(self) -> None:
         self.progress = 0
         self.current_image = None
+        self.message = ""
+        self.output_image_path = "decoded_image.png"
 
     def print_letters(self, letters):
         print('[', end='')
@@ -106,8 +108,8 @@ class FontCracker():
             if letter is None:
                 continue
             self.solve_letter(img_gray, letter, l, all_letters, match_thresh)
-            self.progress = (i+1)/len(letter_subset)
-            print(f'{round(self.progress*100, 2)}% of letters have been searched')
+            self.progress = ((i+1)/len(letter_subset))*100
+            print(f'{round(self.progress, 2)}% of letters have been searched')
         return all_letters
 
     def group_rows(self, letters):
@@ -151,9 +153,9 @@ class FontCracker():
     def finalize_letters(self, letters):
         rows = self.group_rows(letters)
         spaced = self.identify_spaces(rows)
-        msg = self.convert_to_txt(spaced)
+        self.message = self.convert_to_txt(spaced)
         with open('decoded_message.txt', 'w') as f:
-            f.write(msg)
+            f.write(self.message)
         finalized = []
         for row in spaced:
             for word in row:
@@ -216,7 +218,7 @@ class FontCracker():
         letters = self.iterate_letters(img_gray, font_path, letter_subset, match_thresh)
         final = self.finalize_letters(letters)
         self.draw_letters(img_rgb, final)
-        cv.imwrite('decoded_image.png', img_rgb)
+        cv.imwrite(self.output_image_path, img_rgb)
 
     def extract_font(self, font_path, output_path, size, letters):
         if not os.path.exists(output_path):

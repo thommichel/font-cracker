@@ -23,11 +23,21 @@ Install one using one of the following depending on your version of python
 
 - `python3.11 -m venv .venv` 
 
+Look up how to activate the virtual environment based on your OS
+
 ### Packages
 
 Once the virtual environment is setup, install the required packages by running
 
 `pip install -r requirements.txt`
+
+## Font Cracking GUI
+
+To run the GUI use 
+
+`python ./gui.py`
+
+For more info on each field, look at the CLI instructions \(I'm too lazy to rewrite them \)
 
 ## Font Cracking CLI
 

@@ -370,8 +370,8 @@ class MainWindow(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main_window = MainWindow(
-        (int(app.primaryScreen().size().width()*(2/3)),
-         int(app.primaryScreen().size().height()*(2/3)))
+        (int(app.primaryScreen().size().width()*.98),
+         int(app.primaryScreen().size().height()*.98))
     )
     main_window.show()
     sys.exit(app.exec_())

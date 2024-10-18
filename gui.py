@@ -106,7 +106,7 @@ class FirstStage(QWidget):
         thresh_palette = self.title.palette()
         thresh_palette.setColor(QPalette.WindowText, QColor('white'))
         self.title.setPalette(thresh_palette)
-        t_font = QFont('OldEnglish', int(self.w_size[0] * 0.03))
+        t_font = QFont('OldEnglish', int(self.w_size[0] * 0.0085))
         t_font.setBold(True)
         self.title.setFont(t_font)
         self.title.setAlignment(Qt.AlignCenter)
@@ -133,13 +133,13 @@ class FirstStage(QWidget):
             button_palette = button_desc.palette()
             button_palette.setColor(QPalette.WindowText, QColor('white'))
             button_desc.setPalette(button_palette)
-            button_desc.setFont(QFont('Arial', int(self.w_size[0] * 0.006)))
+            button_desc.setFont(QFont('Arial', int(self.w_size[0] * 0.0047)))
             button_desc.setText("NOT SET")
             button_desc.setFixedWidth(int(self.w_size[0] * 0.2))
 
             button = QPushButton(name)
             button.clicked.connect(self.open_file_dialog)
-            button.setFont(QFont('Arial', int(self.w_size[0] * 0.006)))
+            button.setFont(QFont('Arial', int(self.w_size[0] * 0.0047)))
             button.setFixedWidth(int(self.w_size[0] * 0.2))
             
             info["path"] = None
@@ -152,12 +152,12 @@ class FirstStage(QWidget):
         
         enable_lyt = QHBoxLayout()
         fillah = QLabel()
-        fillah.setFont(QFont('Arial', int(self.w_size[0] * 0.006)))
+        fillah.setFont(QFont('Arial', int(self.w_size[0] * 0.0047)))
         fillah.setText("")
         fillah.setFixedWidth(int(self.w_size[0] * 0.2))
         self.folder_select = False
         self.enable_folder = QPushButton("MODE: Font File")
-        self.enable_folder.setFont(QFont('Arial', int(self.w_size[0] * 0.006)))
+        self.enable_folder.setFont(QFont('Arial', int(self.w_size[0] * 0.0047)))
         self.enable_folder.setFixedWidth(int(self.w_size[0] * 0.2))
         self.enable_folder.setCheckable(True)
         self.enable_folder.clicked.connect(self.toggle_state)
@@ -171,13 +171,13 @@ class FirstStage(QWidget):
 
         letter_lyt = QHBoxLayout()
         letter_filler = QLabel()
-        letter_filler.setFont(QFont('Arial', int(self.w_size[0] * 0.006)))
+        letter_filler.setFont(QFont('Arial', int(self.w_size[0] * 0.0047)))
         letter_filler.setText("")
         letter_filler.setFixedWidth(int(self.w_size[0] * 0.2))
 
         self.text_box1 = QLineEdit(self)
         self.text_box1.setPlaceholderText("Enter the character of the single letter")
-        self.text_box1.setFont(QFont('Arial', int(self.w_size[0] * 0.006)))
+        self.text_box1.setFont(QFont('Arial', int(self.w_size[0] * 0.0047)))
         self.text_box1.setFixedWidth(int(self.w_size[0] * 0.2))
         letter_lyt.addWidget(self.text_box1)
         letter_lyt.addWidget(letter_filler)
@@ -191,7 +191,7 @@ class FirstStage(QWidget):
         thresh_palette = self.thresh_desc.palette()
         thresh_palette.setColor(QPalette.WindowText, QColor('white'))
         self.thresh_desc.setPalette(thresh_palette)
-        self.thresh_desc.setFont(QFont('Arial', int(self.w_size[0] * 0.006)))
+        self.thresh_desc.setFont(QFont('Arial', int(self.w_size[0] * 0.0047)))
         self.thresh_desc.setAlignment(Qt.AlignCenter)
         inner_thresh_pnl.addWidget(self.thresh_desc)
         self.prcnt_match = QSlider(Qt.Horizontal)
@@ -216,7 +216,7 @@ class FirstStage(QWidget):
 
         self.text_box2 = QLineEdit(self)
         self.text_box2.setText(str(self.prcnt_match.value()/100))
-        self.text_box2.setFont(QFont('Arial', int(self.w_size[0] * 0.0045)))
+        self.text_box2.setFont(QFont('Arial', int(self.w_size[0] * 0.004)))
         self.text_box2.setFixedWidth(int(self.w_size[0]*0.02))
         self.text_box2.textChanged.connect(self.update_slider)
         thresh_pnl.addWidget(self.text_box2)

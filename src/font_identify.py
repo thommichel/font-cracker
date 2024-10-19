@@ -225,10 +225,10 @@ class FontCracker():
             os.makedirs(output_path)
         for letter in letters:
             font = TTFont(font_path)
-            img = Image.new('RGBA', (size, size), (255, 255, 255, 0))
+            img = Image.new('RGBA', (size*5, size*5), (255, 255, 255, 0))
             draw = ImageDraw.Draw(img)
             font = ImageFont.truetype(font_path, size)
-            draw.text((0, 0), letter, font=font, fill=(0, 0, 0))
+            draw.text((size, size), letter, font=font, fill=(0, 0, 0))
 
             img.save(f'{output_path}/{self.convert_letter_path(letter)}.png')
 
